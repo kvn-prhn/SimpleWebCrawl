@@ -24,3 +24,4 @@ hs_err_pid*
 
 # any generated pages folder
 /pages
+/build/
