@@ -35,8 +35,11 @@ public class WebCrawlUIApp extends Application {
     private TextField pathTextField;
     private TextField iterationsTextField;
     private Button startButton;
-    private Button cancelButton; 
+    private Button cancelButton;
     
+    private Thread runningThread;
+    private CrawlProcessThread crawlProcessThread;
+            
     class CrawlProcessThread implements Runnable {
 
         private WebCrawlUIApp callingApp;
@@ -62,7 +65,10 @@ public class WebCrawlUIApp extends Application {
                     iters++;
                 }  
             } catch(Exception e) {
-                System.err.println(e);
+                System.err.println("In run(): " + e);
+                callingApp.outputAppStatusText("Error in process. Ending");
+                callingApp.completeProcess();
+                return;
             }
             System.out.println("Run ending");
             callingApp.completeProcess();
@@ -119,14 +125,16 @@ public class WebCrawlUIApp extends Application {
             in_process = true; 
             startButton.setDisable(true); // can't start when in process
             cancelButton.setDisable(false);
-            Thread t = new Thread(new CrawlProcessThread(this));
+            crawlProcessThread = new CrawlProcessThread(this);
+            runningThread = new Thread(crawlProcessThread);
             System.out.println("About the start the thread");
-            t.start();
+            runningThread.start();
         }
     }
     
     // this is called when the crawler process ends. 
     public void completeProcess() {
+        runningThread.interrupt();  
         in_process = false;
         startButton.setDisable(false); 
         cancelButton.setDisable(true);

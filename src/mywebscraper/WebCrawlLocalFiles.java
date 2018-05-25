@@ -97,7 +97,7 @@ public class WebCrawlLocalFiles {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 String line; 
                 while ((line = reader.readLine()) != null) { 
-                    page_contents += line;
+                    page_contents += line + "\n";
                 } 
                 // make sure the first line has the <!DOCTYPE html> thing
                 if (page_contents.toLowerCase().contains("<!DOCTYPE html>".toLowerCase())) {
@@ -135,45 +135,48 @@ public class WebCrawlLocalFiles {
         // go through the page to find all of the links 
         String linkPrefix = "href=\"";
         int href_find = page_contents.indexOf(linkPrefix);
-        while (href_find > 0) {
+        while (href_find > 0) { 
             int double_quote_find = page_contents.indexOf('"', href_find + linkPrefix.length() + 1); // skip the found string
-            String foundLink = page_contents.substring(href_find + linkPrefix.length(), double_quote_find);  
-            boolean endsWithExcludedSuffix = false;
-            for (String suf : excluded_suffixes) {
-                if (foundLink.toLowerCase().trim().endsWith(suf)) {
-                    endsWithExcludedSuffix = true;
-                    System.err.println("The url '" + (foundLink) + "' ends with an excluded suffix");
+            int find_link_start_index = href_find + linkPrefix.length();
+            if (double_quote_find >= 0 && double_quote_find > find_link_start_index) {
+                String foundLink = page_contents.substring(find_link_start_index, double_quote_find);  
+                boolean endsWithExcludedSuffix = false;
+                for (String suf : excluded_suffixes) {
+                    if (foundLink.toLowerCase().trim().endsWith(suf)) {
+                        endsWithExcludedSuffix = true;
+                        System.err.println("The url '" + (foundLink) + "' ends with an excluded suffix");
+                    }
                 }
-            }
-            if (!endsWithExcludedSuffix) { 
-                try {
-                    URL foundUrl = new URL(foundLink); // attempt to add this url.
-                    page_links.add(foundUrl); 
-                } catch(MalformedURLException mue) {
-                    System.err.println("Bad url format: " + mue);
-                    String strippedLink = foundLink;
-                    if (strippedLink.startsWith("//")) {
-                        strippedLink = strippedLink.substring(2);
-                    } else if (strippedLink.startsWith("/")) {
-                        strippedLink = strippedLink.substring(1);
-                    } 
+                if (!endsWithExcludedSuffix) { 
                     try {
-                        URL foundUrlModified = new URL(page.getProtocol() + "://" + strippedLink);
-                        page_links.add(foundUrlModified); 
-                        System.out.println("Added with adding a protocol '" + (foundUrlModified) + "'");
-                    } catch(Exception e) { 
-                        System.err.println("Still bad url with adding base, trying entire hostname.");
-                        try { // try to fix the bad format with adding on a host
-                            URL foundUrlModified = new URL(baseUrlStr + foundLink);
-                            page_links.add(foundUrlModified);  
-                            System.out.println("Added with adding a protocol and hostname '" + (foundUrlModified) + "'");
-                        } catch(MalformedURLException secondMue) { 
-                            System.err.println("Unable to convert this link to a proper URL."); 
+                        URL foundUrl = new URL(foundLink); // attempt to add this url.
+                        page_links.add(foundUrl); 
+                    } catch(MalformedURLException mue) {
+                        System.err.println("Bad url format: " + mue);
+                        String strippedLink = foundLink;
+                        if (strippedLink.startsWith("//")) {
+                            strippedLink = strippedLink.substring(2);
+                        } else if (strippedLink.startsWith("/")) {
+                            strippedLink = strippedLink.substring(1);
+                        } 
+                        try {
+                            URL foundUrlModified = new URL(page.getProtocol() + "://" + strippedLink);
+                            page_links.add(foundUrlModified); 
+                            System.out.println("Added with adding a protocol '" + (foundUrlModified) + "'");
+                        } catch(Exception e) { 
+                            System.err.println("Still bad url with adding base, trying entire hostname.");
+                            try { // try to fix the bad format with adding on a host
+                                URL foundUrlModified = new URL(baseUrlStr + foundLink);
+                                page_links.add(foundUrlModified);  
+                                System.out.println("Added with adding a protocol and hostname '" + (foundUrlModified) + "'");
+                            } catch(MalformedURLException secondMue) { 
+                                System.err.println("Unable to convert this link to a proper URL."); 
+                            }
                         }
                     }
                 }
+                // update to the next potential link
             }
-            // update to the next potential link
             href_find = page_contents.indexOf("href=\"", href_find + 1);
         } 
         return page_links;
