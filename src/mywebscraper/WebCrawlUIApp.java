@@ -29,6 +29,7 @@ public class WebCrawlUIApp extends Application {
     public volatile Path pages_path;
     public volatile int max_iters;
     private volatile boolean in_process = false;
+    public volatile boolean verboseOutput = true;
     
     private volatile TextArea statusOutput;
     private TextField startUrlTextField;
@@ -53,7 +54,7 @@ public class WebCrawlUIApp extends Application {
             System.out.println("Run()");
             try {
                 callingApp.outputAppStatusText("Loading local page files.");
-                WebCrawlLocalFiles crawler = new WebCrawlLocalFiles(callingApp.pages_path, callingApp.start_url);
+                WebCrawlLocalFiles crawler = new WebCrawlLocalFiles(callingApp.pages_path, callingApp.start_url, verboseOutput);
                 int iters = 0; 
                 callingApp.outputAppStatusText("Process started.");
                 System.out.println("process started");
